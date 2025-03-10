@@ -7,6 +7,10 @@ WINFLAGS		:= -lwsock32 -lgdi32 -lmingw32
 NOCONSOLEFLAG	:= -mwindows
 OSENV			:=
 
+HEADER			:= ioset.hpp
+MODULE			:= $(HEADER).gch
+MODULE_EXIST	:=
+
 ifeq ($(OS),Windows_NT)
 	OSENV := Windows
 else
@@ -18,7 +22,16 @@ else
 	endif
 endif
 
+ifeq ($(OSENV), Windows)
+	MODULE_EXIST := $(shell dir /b | findstr ${MODULE})
+else ifeq ($(OSENV), Linux)
+	MODULE_EXIST := $(shell ls | grep ${MODULE})
+endif
+
 run:
+ifneq (${MODULE_EXIST}, ${MODULE})
+	g++ -x c++-header -g $(HEADER) -o $(MODULE)
+endif
 ifeq ($(ARG1),)
 	@python
 else ifeq ($(findstring .py, $(ARG1)), .py)
