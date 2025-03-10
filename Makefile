@@ -59,3 +59,14 @@ else ifeq ($(findstring .c, $(ARG1)), .c)
 endif
 	@echo ERROR No.1 : Processing Complete
 	@exit /b 1
+
+
+cleanup:
+ifeq ($(OSENV), Linux)
+	@rm -f $(CPPMODULE) *.d
+else ifeq ($(OSENV), Windows)
+	@del $(CPPMODULE) *.d
+else
+	@echo Unknown OS
+endif
+	@echo Completed
