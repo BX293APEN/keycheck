@@ -1,25 +1,71 @@
 #define _CRT_SECURE_NO_WARNINGS //SDLチェック無効
 
-#include <cstdio> 
-#include <cstdlib> 
-#include <iostream> 
-#include <cstring> 
+#include <cstddef>
+#include <limits>
+#include <climits>
+#include <cfloat>
+#include <cstdint>
+#include <cstdlib>
+#include <new>
+#include <typeinfo>
+#include <exception>
+#include <initializer_list>
+#include <cstdalign>
+#include <stdexcept>
+#include <cassert>
+#include <cerrno>
+#include <system_error>
 #include <string>
-#include <algorithm> 
-#include <iterator> 
-#include <fstream> 
-#include <istream> 
-#include <sstream> 
-#include <vector> 
-#include <tuple> 
-#include <iomanip> 
-#include <thread> 
+
+#if __has_include(<string_view>)
+#   include <string_view>
+#endif
+
+#include <array>
+#include <deque>
+#include <forward_list>
+#include <list>
+#include <vector>
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <queue>
+#include <stack>
+#include <iterator>
+#include <algorithm>
+#include <cfenv>
+#include <random>
+#include <numeric>
+#include <iosfwd>
+#include <iostream>
+#include <ios>
+#include <streambuf>
+#include <istream>
+#include <ostream>
+#include <iomanip>
+#include <sstream>
+#include <fstream>
+
+#if __has_include(<filesystem>)
+#   include <filesystem>
+#endif
+
+#include <cstdio>
+#include <cinttypes>
+
+
+#include <regex>
+#include <atomic>
+#include <thread>
+#include <mutex>
+#include <shared_mutex>
+#include <condition_variable>
 #include <future>
+#include <cstring>       
+#include <tuple>   
 #include <ctime>
 #include <chrono>
-#include <random>
-#include <unordered_map>
-#include <map>
 
 #define _USE_MATH_DEFINES //数値演算定数を定義
 #include <cmath>
