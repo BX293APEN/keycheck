@@ -11,6 +11,10 @@ CPPHEADER		:= ioset.hpp
 CPPMODULE		:= $(CPPHEADER).gch
 CPPMODULE_EXIST	:=
 
+RC				:= icon.rc
+RC_EXIST		:=
+RCMODULE		:=
+
 ifeq ($(OS),Windows_NT)
 	OSENV := Windows
 else
@@ -24,8 +28,10 @@ endif
 
 ifeq ($(OSENV), Windows)
 	CPPMODULE_EXIST := $(shell dir /b | findstr ${CPPMODULE})
+	RC_EXIST        := $(shell dir /b | findstr ${RC})
 else ifeq ($(OSENV), Linux)
 	CPPMODULE_EXIST := $(shell ls | grep ${CPPMODULE})
+	RC_EXIST        := $(shell dir /b | findstr ${RC})
 endif
 
 run:
@@ -36,6 +42,11 @@ else ifeq ($(findstring .py, $(TARGET)), .py)
 	python $(TARGET)
 
 else ifeq ($(findstring .cpp, $(TARGET)), .cpp)
+    ifeq (${RC_EXIST}, ${RC})
+		$(eval RCMODULE		:= $(RC:.rc=.res))
+		windres $(RC) -O coff -o $(RCMODULE)
+        # -O : 形式指定  coff : Common Object File Format
+    endif
     ifneq (${CPPMODULE_EXIST}, ${CPPMODULE})
 		g++ -x c++-header -g $(CPPHEADER) -o $(CPPMODULE)
     endif
@@ -45,16 +56,20 @@ else ifeq ($(findstring .cpp, $(TARGET)), .cpp)
     ifneq ($(OPTION), )
 		$(eval CFLAGS := $(CFLAGS) $(NOCONSOLEFLAG))
     endif
-	g++ -g $(TARGET) $(CFLAGS) -o $(TARGET:.cpp=.exe)
+	g++ -g $(TARGET) $(RCMODULE) $(CFLAGS) -o $(TARGET:.cpp=.exe)
 
 else ifeq ($(findstring .c, $(TARGET)), .c)
+    ifeq (${RC_EXIST}, ${RC})
+		$(eval RCMODULE		:= $(RC:.rc=.res))
+		windres $(RC) -O coff -o $(RCMODULE)
+    endif
     ifeq ($(OSENV), Windows)
 		$(eval CFLAGS := $(CFLAGS) $(WINFLAGS))
     endif
     ifneq ($(OPTION), )
 		$(eval CFLAGS := $(CFLAGS) $(NOCONSOLEFLAG))
     endif
-	gcc -g $(TARGET) $(CFLAGS) -o $(TARGET:.c=.exe)
+	gcc -g $(TARGET) $(RCMODULE) $(CFLAGS) -o $(TARGET:.c=.exe)
 
 endif
 	@echo ERROR No.1 : Processing Complete
@@ -63,9 +78,9 @@ endif
 
 cleanup:
 ifeq ($(OSENV), Linux)
-	@rm -f $(CPPMODULE) *.d
+	@rm -f $(CPPMODULE) *.d *.res
 else ifeq ($(OSENV), Windows)
-	@del $(CPPMODULE) *.d
+	@del $(CPPMODULE) *.d *.res
 else
 	@echo Unknown OS
 endif
