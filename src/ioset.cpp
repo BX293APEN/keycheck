@@ -752,7 +752,10 @@ class vec : public std::vector<std::string>{
                 return DefWindowProc(hwnd, msg, wparam, lparam);
             }
     };
-    
+
+    /** 
+     * @param text タイトル
+     */
     class IOSet {
         protected:
             std::string appTitle; //コマンドプロンプトのタイトル
@@ -832,31 +835,29 @@ class vec : public std::vector<std::string>{
             }
         
             // プロセスハンドルから特権名を有効/無効
-            BOOL ProcessPrivilegeName( HANDLE hProcess, LPCTSTR lpPrivilegeName, BOOL bEnable ){
-                BOOL                bSuccess = FALSE; // 戻り値(成功/失敗)
-                HANDLE              hToken;     // アクセストークンのハンドル
-                LUID                Luid;       // LUID(ローカル・ユニークID)
-                DWORD               dwSize;     // 特権トークン容量(変更前の特権)
-                TOKEN_PRIVILEGES    OldPriv;    // 特権トークン情報(変更前の特権)
-                TOKEN_PRIVILEGES    NewPriv;    // 特権トークン情報(新しい特権)
+            BOOL ProcessPrivilegeName(HANDLE hProcess, LPCTSTR lpPrivilegeName, BOOL bEnable) {
+                HANDLE              hToken; // アクセストークンのハンドル
+                LUID                luid;   // LUID(ローカル・ユニークID)
+                TOKEN_PRIVILEGES    tp;     // 特権トークン情報
             
-                // アクセストークンのハンドルを取得
-                if ( OpenProcessToken(hProcess,OPEN_PROCESS_TOKEN,&hToken) ){
-                    if ( LookupPrivilegeValue(NULL,lpPrivilegeName,&Luid) ){    // 特権名のLUIDを取得
-                        NewPriv.PrivilegeCount              = 1;                // 特権数
-                        NewPriv.Privileges[0].Luid          = Luid;             // 識別子
-                        NewPriv.Privileges[0].Attributes    = bEnable ? SE_PRIVILEGE_ENABLED : 0;
-                    
-                        // 特権トークン状態の有効/無効
-                        if ( AdjustTokenPrivileges(hToken,FALSE,&NewPriv,sizeof(TOKEN_PRIVILEGES),&OldPriv,&dwSize) ){
-                            if ( GetLastError() == ERROR_SUCCESS ){
-                                bSuccess = TRUE;
-                            }
-                        }
-                    }
-                    CloseHandle( hToken );
+                if (!OpenProcessToken(hProcess, OPEN_PROCESS_TOKEN, &hToken)) {
+                    return FALSE;
                 }
-                return bSuccess;
+            
+                if (!LookupPrivilegeValue(NULL, lpPrivilegeName, &luid)) { // 特権名のLUIDを取得
+                    CloseHandle(hToken);
+                    return FALSE;
+                }
+            
+                tp.PrivilegeCount = 1; // 特権数
+                tp.Privileges[0].Luid = luid; // 識別子
+                tp.Privileges[0].Attributes = bEnable ? SE_PRIVILEGE_ENABLED : 0;
+
+                // 特権トークン状態の有効/無効
+                BOOL result = AdjustTokenPrivileges(hToken, FALSE, &tp, 0, NULL, NULL) && GetLastError() == ERROR_SUCCESS;
+            
+                CloseHandle(hToken);
+                return result;
             }
             int shutdown(std::string op,int second){
                 int uFlag;
@@ -869,11 +870,15 @@ class vec : public std::vector<std::string>{
                 else if(op == "reboot"){
                     uFlag = EWX_REBOOT;
                 }
+                else{
+                    return -1;
+                }
                 Sleep(second * 1000);
             
                 // ログオフ/シャットダウン/再起動を実行する
-                this->ProcessPrivilegeName( GetCurrentProcess(), SE_SHUTDOWN_NAME, TRUE );
-                ExitWindowsEx( uFlag, 0 );
+                if(this->ProcessPrivilegeName( GetCurrentProcess(), SE_SHUTDOWN_NAME, TRUE )){
+                    ExitWindowsEx( uFlag, 0 );
+                }
                 return 0;
             }
         
@@ -888,6 +893,17 @@ class vec : public std::vector<std::string>{
             std::string pwd() {
                 return this->pwdPath;
             }
+
+            /**
+             * @brief
+             * メッセージボックスを作成
+             * @param tit タイトル
+             * @param tex テキスト
+             * @param button 0.[OK] 1.[OK][キャンセル] 2.[はい][いいえ] 3.[はい][いいえ][キャンセル] 4.[中止][再試行][無視] 5.[再試行][キャンセル]
+             * @param icon 0.なし 1.注意 2.情報 3.質問 4.警告
+             * @param help 0.なし 1.あり
+             * @return int
+             */
             int MsgBox(
                 std::string msgBoxTitle = "タイトル",
                 std::string msgBoxText = "テキスト",
@@ -896,43 +912,43 @@ class vec : public std::vector<std::string>{
                 int help = 0
             ){
                 int ans;
-                int val1 = 0, val2 =  0, val3 = 0, forms = 0;
+                int forms = 0;
                 switch(button){
                     case 1:
-                        val1 = MB_OKCANCEL;
+                        forms = MB_OKCANCEL;
                         break;
                     case 2:
-                        val1 = MB_ABORTRETRYIGNORE;
+                        forms = MB_ABORTRETRYIGNORE;
                         break;
                     case 3:
-                        val1 = MB_YESNOCANCEL;
+                        forms = MB_YESNOCANCEL;
                         break;
                     case 4:
-                        val1 = MB_YESNO;        
+                        forms = MB_YESNO;        
                         break;
                     case 5:
-                        val1 = MB_RETRYCANCEL;
+                        forms = MB_RETRYCANCEL;
                         break;
                     default:
-                        val1 = MB_OK;
+                        forms = MB_OK;
                         break;
                 }
                 switch(icon){
                     case 1:
                     case MB_ICONWARNING:
-                        val2 = MB_ICONWARNING;
+                        forms |= MB_ICONWARNING;
                         break;
                     case 2:
                     case MB_ICONINFORMATION:
-                        val2 = MB_ICONINFORMATION;
+                        forms |= MB_ICONINFORMATION;
                         break;
                     case 3:
                     case MB_ICONQUESTION:
-                        val2 = MB_ICONQUESTION;
+                        forms |= MB_ICONQUESTION;
                         break;
                     case 4:
                     case MB_ICONERROR:
-                        val2 = MB_ICONERROR;
+                        forms |= MB_ICONERROR;
                         break;
                     default:
                         break;
@@ -940,12 +956,11 @@ class vec : public std::vector<std::string>{
                 switch(help){
                     case 1:
                     case MB_HELP:
-                        val3 = MB_HELP;
+                        forms |= MB_HELP;
                         break;
                     default:
                         break;
                 }
-                forms = val1 | val2 | val3;
                 ans = MessageBox(NULL , msgBoxText.c_str(), msgBoxTitle.c_str(), forms );
                 return ans;
             }
