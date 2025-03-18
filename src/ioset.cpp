@@ -899,7 +899,7 @@ class vec : public std::vector<std::string>{
              * メッセージボックスを作成
              * @param tit タイトル
              * @param tex テキスト
-             * @param button 0.[OK] 1.[OK][キャンセル] 2.[はい][いいえ] 3.[はい][いいえ][キャンセル] 4.[中止][再試行][無視] 5.[再試行][キャンセル]
+             * @param button 0.[OK] 1.[OK][キャンセル] 2.[中止][再試行][無視] 3.[はい][いいえ][キャンセル] 4.[はい][いいえ] 5.[再試行][キャンセル]
              * @param icon 0.なし 1.注意 2.情報 3.質問 4.警告
              * @param help 0.なし 1.あり
              * @return int
